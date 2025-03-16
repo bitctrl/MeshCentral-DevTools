@@ -22,6 +22,25 @@
     var deletePluginConfigEx = function() {
         parent.meshserver.send({ action: 'plugin', plugin: 'devtools', pluginaction: 'deletePluginConfig', id: parent.Q('dtDeletePluginConf').value });
     };
+    var disableAllPluginsEx = function() {
+        parent.meshserver.send({ action: 'plugin', plugin: 'devtools', pluginaction: 'disableAllPlugins' });
+    }
+    var enablePluginEx = function() {
+        const id = parent.Q('dtEnablePlugin').value;
+        let conf;
+        parent.installedPluginList.some((doc) => (doc._id === id && ((conf = doc), true)));
+        if (conf._devtools_previousStatus) {
+            conf.status = conf._devtools_previousStatus;
+            delete conf._devtools_previousStatus;
+        } else {
+            conf.status = 1;
+        }
+        console.log(conf);
+        parent.meshserver.send({ action: 'plugin', plugin: 'devtools', pluginaction: 'savePluginConfig', id, conf });
+    };
+    var enablePreviouslyDisabledPluginsEx = function() {
+        parent.meshserver.send({ action: 'plugin', plugin: 'devtools', pluginaction: 'enablePreviouslyDisabledPlugins' });
+    }
     var restartServerEx = function() {
         parent.meshserver.send({ action: 'plugin', plugin: 'devtools', pluginaction: 'restartServer' });
     }
@@ -57,8 +76,23 @@
         sel += '</select>';
         parent.setDialogMode(2, "Delete which Plugin?", 3, deletePluginConfigEx, sel);
     }
+    function disableAllPlugins() {
+        parent.setDialogMode(2, "Disable all plugins?", 3, disableAllPluginsEx, 'Are you sure you want to disable all plugins except the Dev Tools?');
+    }
+    function enablePreviouslyDisabledPlugins() {
+        parent.setDialogMode(2, "Enable previously disabled plugins?", 3, enablePreviouslyDisabledPluginsEx, 'Are you sure you want to enable all previously disabled plugins?');
+    }
+    function enablePlugin() {
+        var sel = '<select id="dtEnablePlugin">'
+        parent.installedPluginList.forEach((plugin) => {
+            if (plugin.status) { return; }
+            sel += `<option${plugin._devtools_previousStatus ? ' style="font-weight: bold;"' : ''} value="${plugin._id}">${plugin.name}</option>`;
+        });
+        sel += '</select>';
+        parent.setDialogMode(2, "Enable which Plugin?", 3, enablePluginEx, sel);
+    }
     function restartServer() {
-        parent.setDialogMode(2, "Restart Server?", 3, restartServerEx, 'Are you sure?');
+        parent.setDialogMode(2, "Restart Server?", 3, restartServerEx, 'Are you sure you want to restart the server?');
     }
     function initPtools() {
         parent.pluginHandler.devtools.loadEditPluginConfig = function(args, msg) {
@@ -84,6 +118,9 @@
   <a href="#" onclick="deletePluginConfig(); return false;">Delete a plugin config from the database</a><br /><br />
   <a href="#" onclick="refreshHandler(); return false;">Refresh PluginHandler</a><br /><br />
   <a href="#" onclick="editPluginConfig(); return false;">Edit a plugin config</a><br /><br />
+  <a href="#" onclick="disableAllPlugins(); return false;">Disable all plugins</a> except the Dev Tools<br /><br />
+  <a href="#" onclick="enablePlugin(); return false;">Enable a plugin</a><br /><br />
+  <a href="#" onclick="enablePreviouslyDisabledPlugins(); return false;">Enable previously disabled plugins</a><br /><br />
   <a href="#" onclick="restartServer(); return false;">Restart Server</a><br /><br />
 </div>
 </body>

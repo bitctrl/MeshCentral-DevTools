@@ -20,4 +20,6 @@ Restart your MeshCentral server after making this change.
 - Force Refresh the PluginHandler
 - Edit a plugin config directly
 - Remove a plugin config from the database
+- Disable all plugins at once
+- Enable a single plugin or all previously disabled plugins
 - Restart the server

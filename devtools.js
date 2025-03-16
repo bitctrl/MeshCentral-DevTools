@@ -54,6 +54,41 @@ module.exports.devtools = function (parent) {
                     });
                 });
             break;
+            case 'disableAllPlugins': {
+                obj.meshServer.db.getPlugins(function(err, docs) {
+                    if (err) { console.log('PLUGIN: devtools:', err); return; }
+                    let pendingUpdates = 0;
+                    for (const doc of docs) {
+                        if (doc.shortName === 'devtools' || doc.status === 0) { continue; }
+                        ++pendingUpdates;
+                        console.log('PLUGIN: devtools: disabling plugin:', doc.shortName);
+                        doc._devtools_previousStatus = doc.status;
+                        doc.status = 0;
+                        obj.meshServer.db.updatePlugin(doc._id, doc, function() {
+                            if (--pendingUpdates == 0 ) { console.log('PLUGIN: devtools:', command.pluginaction, 'DONE'); }
+                        })
+                    }
+                });
+                break;
+            }
+            case 'enablePreviouslyDisabledPlugins': {
+                obj.meshServer.db.getPlugins(function(err, docs) {
+                    if (err) { console.log('PLUGIN: devtools:', err); return; }
+                    let pendingUpdates = 0;
+                    for (const doc of docs) {
+                        const previousStatus = (+doc._devtools_previousStatus) ?? 0;
+                        if (isNaN(previousStatus) || previousStatus === 0) { continue; }
+                        ++pendingUpdates;
+                        console.log('PLUGIN: devtools: enabling plugin:', doc.shortName);
+                        doc.status = previousStatus;
+                        delete doc._devtools_previousStatus;
+                        obj.meshServer.db.updatePlugin(doc._id, doc, function() {
+                            if (--pendingUpdates == 0 ) { console.log('PLUGIN: devtools:', command.pluginaction, 'DONE'); }
+                        })
+                    }
+                });
+                break;
+            }
             case 'restartServer':
                 process.exit(123);
             default:
